@@ -1,3 +1,6 @@
+import com.amazonaws.services.cloudwatch.model.StandardUnit;
+
+import java.util.Timer;
 
 /**
  * Class representing final state of the coding activity.
@@ -27,15 +30,19 @@ public class OrderProcessor {
      */
     public boolean processOrder(Order newOrder) {
         boolean success = false;
-
+        long firstTime = System.currentTimeMillis();
         try {
             customerManager.verifyCustomerInfo(newOrder);
             int pickListNumber = inventoryManager.createPickList(newOrder);
             creditProcessor.processPayment(newOrder);
             inventoryManager.processPickList(pickListNumber);
             success = true;
+            long secondTime = System.currentTimeMillis();
+            metricsPublisher.addMetric("ORDER_PROCESSING_TIMES", secondTime - firstTime, StandardUnit.Milliseconds);
         } catch (Exception e) {
+            long secondTime = System.currentTimeMillis();
             System.out.println("Error processing order " + newOrder.getOrderNumber());
+            metricsPublisher.addMetric("ORDER_PROCESSING_TIMES", secondTime - firstTime, StandardUnit.Milliseconds);
         }
 
         return success;
